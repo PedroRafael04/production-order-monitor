@@ -104,29 +104,38 @@ public class ProductionOrderService {
 
     @Transactional
     public OrderSummaryResponse updateStatus(Long id, UpdateStatusRequest request) {
-        ProductionOrder order = findOrderOrThrow(id);
-        OrderStatus current = order.getStatus();
-        OrderStatus target  = request.getStatus();
+        try {
+            log.debug("Starting updateStatus for orderId={}, targetStatus={}", id, request.getStatus());
+            
+            ProductionOrder order = findOrderOrThrow(id);
+            OrderStatus current = order.getStatus();
+            OrderStatus target  = request.getStatus();
 
-        if (!ALLOWED_TRANSITIONS.get(current).contains(target)) {
-            throw new InvalidStatusTransitionException(
-                    String.format("Cannot transition from %s to %s", current, target));
+            log.debug("Current status: {}, Target status: {}", current, target);
+
+            if (!ALLOWED_TRANSITIONS.get(current).contains(target)) {
+                throw new InvalidStatusTransitionException(
+                        String.format("Cannot transition from %s to %s", current, target));
+            }
+
+            if (request.getMachineId() != null)    order.setMachineId(request.getMachineId());
+            if (request.getOperatorName() != null) order.setOperatorName(request.getOperatorName());
+
+            int updated = orderRepository.updateStatus(id, target.name());
+            if (updated == 0) throw new ResourceNotFoundException("Order not found: " + id);
+
+            // Re-fetch to get DB-updated timestamps
+            order = findOrderOrThrow(id);
+
+            appendLog(order, com.portfolio.productionmonitor.model.LogLevel.INFO,
+                    "Status changed from " + current + " to " + target + ".", null);
+
+            log.info("Order [{}] status: {} → {}", order.getOrderCode(), current, target);
+            return toSummaryResponse(order);
+        } catch (Exception e) {
+            log.error("Error updating status for orderId={}", id, e);
+            throw e;
         }
-
-        if (request.getMachineId() != null)    order.setMachineId(request.getMachineId());
-        if (request.getOperatorName() != null) order.setOperatorName(request.getOperatorName());
-
-        int updated = orderRepository.updateStatus(id, target.name());
-        if (updated == 0) throw new ResourceNotFoundException("Order not found: " + id);
-
-        // Re-fetch to get DB-updated timestamps
-        order = findOrderOrThrow(id);
-
-        appendLog(order, com.portfolio.productionmonitor.model.LogLevel.INFO,
-                "Status changed from " + current + " to " + target + ".", null);
-
-        log.info("Order [{}] status: {} → {}", order.getOrderCode(), current, target);
-        return toSummaryResponse(order);
     }
 
     // ---------------------------------------------------------------

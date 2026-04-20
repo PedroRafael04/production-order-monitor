@@ -52,10 +52,9 @@ public interface ProductionOrderRepository extends JpaRepository<ProductionOrder
 
     @Query("""
             SELECT o FROM ProductionOrder o
-            WHERE (:status IS NULL OR o.status = :status)
-              AND (:start IS NULL OR o.scheduledAt >= :start)
-              AND (:end   IS NULL OR o.scheduledAt <= :end)
-            ORDER BY o.scheduledAt DESC
+            WHERE o.status = coalesce(:status, o.status)
+              AND o.scheduledAt >= coalesce(:start, o.scheduledAt)
+              AND o.scheduledAt <= coalesce(:end, o.scheduledAt)
             """)
     Page<ProductionOrder> findByFilters(
             @Param("status") OrderStatus status,
@@ -93,8 +92,8 @@ public interface ProductionOrderRepository extends JpaRepository<ProductionOrder
                 AVG(EXTRACT(EPOCH FROM (finished_at - started_at)) / 3600.0)
                     FILTER (WHERE status = 'FINISHED')           AS avg_duration_hours
             FROM production_orders
-            WHERE (:start IS NULL OR scheduled_at >= CAST(:start AS TIMESTAMPTZ))
-              AND (:end   IS NULL OR scheduled_at <= CAST(:end   AS TIMESTAMPTZ))
+            WHERE scheduled_at >= coalesce(CAST(:start AS TIMESTAMPTZ), scheduled_at)
+              AND scheduled_at <= coalesce(CAST(:end   AS TIMESTAMPTZ), scheduled_at)
             """, nativeQuery = true)
     Object[] getDashboardStats(
             @Param("start") String start,

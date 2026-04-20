@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -34,19 +35,19 @@ public class ProductionOrderController {
     }
 
     // ---------------------------------------------------------------
-    // GET /api/v1/orders/{id}
-    // ---------------------------------------------------------------
-    @GetMapping("/{id}")
-    public ResponseEntity<OrderDetailResponse> getOrderById(@PathVariable Long id) {
-        return ResponseEntity.ok(service.getOrderById(id));
-    }
-
-    // ---------------------------------------------------------------
     // GET /api/v1/orders/code/{code}
     // ---------------------------------------------------------------
     @GetMapping("/code/{code}")
     public ResponseEntity<OrderDetailResponse> getOrderByCode(@PathVariable String code) {
         return ResponseEntity.ok(service.getOrderByCode(code));
+    }
+
+    // ---------------------------------------------------------------
+    // GET /api/v1/orders/id/{id}
+    //----------------------------------------------------------------
+    @GetMapping("/id/{id}")
+    public ResponseEntity<OrderDetailResponse> getOrderById(@PathVariable Long id) {
+        return ResponseEntity.ok(service.getOrderById(id));
     }
 
     // ---------------------------------------------------------------
@@ -57,7 +58,7 @@ public class ProductionOrderController {
             @RequestParam(required = false) OrderStatus status,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime start,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime end,
-            @PageableDefault(size = 20, sort = "scheduledAt") Pageable pageable) {
+            @PageableDefault(size = 20, sort = "scheduledAt", direction = Sort.Direction.DESC) Pageable pageable) {
 
         return ResponseEntity.ok(service.listOrders(status, start, end, pageable));
     }
