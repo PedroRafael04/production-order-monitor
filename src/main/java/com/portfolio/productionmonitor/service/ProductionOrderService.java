@@ -31,11 +31,10 @@ public class ProductionOrderService {
 
     // Valid status transitions
     private static final Map<OrderStatus, Set<OrderStatus>> ALLOWED_TRANSITIONS = Map.of(
-            OrderStatus.PENDING,   Set.of(OrderStatus.RUNNING, OrderStatus.CANCELLED),
-            OrderStatus.RUNNING,   Set.of(OrderStatus.FINISHED, OrderStatus.CANCELLED),
-            OrderStatus.FINISHED,  Set.of(),
-            OrderStatus.CANCELLED, Set.of()
-    );
+            OrderStatus.PENDING, Set.of(OrderStatus.RUNNING, OrderStatus.CANCELLED),
+            OrderStatus.RUNNING, Set.of(OrderStatus.FINISHED, OrderStatus.CANCELLED),
+            OrderStatus.FINISHED, Set.of(),
+            OrderStatus.CANCELLED, Set.of());
 
     // ---------------------------------------------------------------
     // CREATE
@@ -106,10 +105,10 @@ public class ProductionOrderService {
     public OrderSummaryResponse updateStatus(Long id, UpdateStatusRequest request) {
         try {
             log.debug("Starting updateStatus for orderId={}, targetStatus={}", id, request.getStatus());
-            
+
             ProductionOrder order = findOrderOrThrow(id);
             OrderStatus current = order.getStatus();
-            OrderStatus target  = request.getStatus();
+            OrderStatus target = request.getStatus();
 
             log.debug("Current status: {}, Target status: {}", current, target);
 
@@ -118,11 +117,14 @@ public class ProductionOrderService {
                         String.format("Cannot transition from %s to %s", current, target));
             }
 
-            if (request.getMachineId() != null)    order.setMachineId(request.getMachineId());
-            if (request.getOperatorName() != null) order.setOperatorName(request.getOperatorName());
+            if (request.getMachineId() != null)
+                order.setMachineId(request.getMachineId());
+            if (request.getOperatorName() != null)
+                order.setOperatorName(request.getOperatorName());
 
             int updated = orderRepository.updateStatus(id, target.name());
-            if (updated == 0) throw new ResourceNotFoundException("Order not found: " + id);
+            if (updated == 0)
+                throw new ResourceNotFoundException("Order not found: " + id);
 
             // Re-fetch to get DB-updated timestamps
             order = findOrderOrThrow(id);
@@ -170,31 +172,32 @@ public class ProductionOrderService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> getDashboardStats(OffsetDateTime start, OffsetDateTime end) {
-        Object[] row = (Object[]) orderRepository.getDashboardStats(
+        List<Object[]> rows = orderRepository.getDashboardStats(
                 start != null ? start.toString() : null,
-                end   != null ? end.toString()   : null
-        );
+                end != null ? end.toString() : null);
+
+        Object[] row = rows.isEmpty()
+                ? new Object[] { 0L, 0L, 0L, 0L, 0L, BigDecimal.ZERO }
+                : rows.get(0);
 
         return Map.of(
-                "total",             row[0],
-                "pending",           row[1],
-                "running",           row[2],
-                "finished",          row[3],
-                "cancelled",         row[4],
-                "avgDurationHours",  row[5] != null ? row[5] : BigDecimal.ZERO
-        );
+                "total", row[0],
+                "pending", row[1],
+                "running", row[2],
+                "finished", row[3],
+                "cancelled", row[4],
+                "avgDurationHours", row[5] != null ? row[5] : BigDecimal.ZERO);
     }
 
     @Transactional(readOnly = true)
     public List<Map<String, Object>> getMachineWorkload() {
         return orderRepository.getMachineWorkloadReport().stream()
                 .map(row -> Map.<String, Object>of(
-                        "machineId",    row[0],
-                        "totalOrders",  row[1],
-                        "completed",    row[2],
-                        "inProgress",   row[3],
-                        "avgQuantity",  row[4]
-                ))
+                        "machineId", row[0],
+                        "totalOrders", row[1],
+                        "completed", row[2],
+                        "inProgress", row[3],
+                        "avgQuantity", row[4]))
                 .toList();
     }
 
@@ -208,7 +211,7 @@ public class ProductionOrderService {
     }
 
     private void appendLog(ProductionOrder order, com.portfolio.productionmonitor.model.LogLevel level,
-                           String message, String metadata) {
+            String message, String metadata) {
         ExecutionLog entry = ExecutionLog.builder()
                 .order(order)
                 .level(level)
