@@ -143,9 +143,9 @@ Content-Type: application/json
 }
 ```
 
-#### List orders (with filters and pagination)
+#### List orders
 ```http
-GET /orders?status=PENDING&start=2025-01-01T00:00:00Z&end=2025-12-31T23:59:59Z&page=0&size=20
+GET /orders?status=PENDING&start=2025-01-01T00:00:00Z&end=2025-12-31T23:59:59Z
 ```
 
 #### Get order by ID
@@ -311,21 +311,23 @@ Flyway will automatically run all migrations on startup. Seed data is included.
 
 ```bash
 # Create an order
-curl -X POST http://localhost:8080/api/v1/orders \
-  -H "Content-Type: application/json" \
-  -d '{
-    "orderCode": "OP-2025-0001",
-    "productName": "Hydraulic Cylinder Rod",
-    "quantity": 100,
-    "priority": 4,
-    "scheduledAt": "2025-12-01T08:00:00Z"
-  }'
+POST http://localhost:8080/api/v1/orders
+Content-Type: application/json
+{
+  "orderCode": "OP-2026-0001",
+  "productName": "Steel Shaft 40mm",
+  "quantity": 120,
+  "priority": 3,
+  "machineId": "JXB-012",
+  "operatorName": "Pedro Rafael",
+  "scheduledAt": "2026-04-21T14:00:00Z"
+}
 
 # List all orders
-curl http://localhost:8080/api/v1/orders
+http://localhost:8080/api/v1/orders
 
 # Get dashboard stats
-curl http://localhost:8080/api/v1/orders/dashboard/stats
+http://localhost:8080/api/v1/orders/dashboard/stats
 ```
 
 ---
