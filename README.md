@@ -279,7 +279,7 @@ Validation errors include field-level detail:
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/<your-username>/production-order-monitor.git
+git clone https://github.com/PedroRafael04/production-order-monitor.git
 cd production-order-monitor
 ```
 
